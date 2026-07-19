@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+<title>ANGEL LIVE｜カタログ一括取込</title>
+<script src="./config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Zen+Maru+Gothic:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#FBF7F4;--card:#fff;--rose:#B96B79;--rose-d:#9d5563;--gold:#C9A96A;--ink:#4A3F3D;--sub:#A89A94;--line:#F5EBE7;--err:#E4586B}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--ink);font-family:'Zen Maru Gothic',sans-serif;font-size:15px;line-height:1.6;padding-bottom:80px}
+.wrap{max-width:560px;margin:0 auto;padding:18px 16px}
+.brand{font-family:'Cormorant Garamond',serif;font-weight:600;font-size:26px;letter-spacing:.06em;color:var(--rose-d)}
+.sub{font-size:12px;color:var(--sub);letter-spacing:.14em;margin-bottom:20px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px;margin-bottom:14px;box-shadow:0 2px 10px rgba(185,107,121,.05)}
+.title{font-size:14.5px;font-weight:700;color:var(--rose-d);margin-bottom:10px}
+label.fl{display:block;font-size:12px;color:var(--sub);margin:10px 0 4px}
+input,select,textarea{width:100%;border:1.5px solid var(--line);border-radius:12px;padding:10px 12px;font:inherit;font-size:14px;background:#fff;color:var(--ink)}
+input:focus{outline:2px solid var(--rose);outline-offset:1px}
+.hint{font-size:11.5px;color:var(--sub);margin-top:6px}
+.hint a{color:var(--rose-d)}
+.btn{display:block;width:100%;border:none;border-radius:999px;padding:13px;font:inherit;font-weight:700;font-size:15px;color:#fff;background:linear-gradient(135deg,#CE8996,var(--rose-d));cursor:pointer;margin-top:12px}
+.btn:disabled{opacity:.45}
+.btn.sub2{background:#fff;color:var(--rose-d);border:1.5px solid var(--rose)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.genre{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--line)}
+.genre input[type=checkbox]{width:19px;height:19px;accent-color:var(--rose);flex:none}
+.genre .gn{flex:1;font-size:13px;font-weight:500}
+.genre select{width:128px;flex:none;font-size:12px;padding:6px 8px}
+#prog{font-size:12.5px;color:var(--sub);margin-top:10px;min-height:18px}
+.bar{height:6px;background:var(--line);border-radius:3px;overflow:hidden;margin-top:6px}
+.bar i{display:block;height:100%;width:0;background:var(--rose);transition:width .3s}
+.row{display:flex;gap:10px;align-items:center;padding:11px 0;border-bottom:1px solid var(--line)}
+.row img{width:56px;height:56px;object-fit:contain;background:#fff;border:1px solid var(--line);border-radius:12px;flex:none}
+.row .info{flex:1;min-width:0}
+.row input.nm{border:none;background:transparent;font-weight:700;font-size:12.5px;padding:0;width:100%}
+.row input.nm:focus{outline:1px dashed var(--rose)}
+.row .meta{font-size:11.5px;color:var(--sub)}
+.row .cat{display:inline-block;font-size:10px;color:var(--rose-d);background:#F8ECEE;border-radius:999px;padding:1px 8px;margin-top:3px}
+.row .pt{width:66px;flex:none}
+.row .pt input{padding:7px 4px;text-align:center;font-weight:700;border-radius:10px}
+.row .ptl{font-size:9.5px;color:var(--sub);text-align:center;margin-top:2px}
+.row .del{border:none;background:none;color:var(--sub);font-size:17px;cursor:pointer;flex:none}
+#sum{font-size:12.5px;color:var(--sub);margin:6px 0}
+.toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:var(--ink);color:#fff;font-size:13px;padding:10px 20px;border-radius:999px;opacity:0;pointer-events:none;transition:opacity .3s;z-index:9;max-width:90%;text-align:center}
+.toast.show{opacity:1}
+.chk{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--sub);margin-top:10px}
+.chk input{width:18px;height:18px;accent-color:var(--rose)}
+.top{display:flex;justify-content:space-between;align-items:flex-start}
+.mini{border:1.5px solid var(--rose);background:#fff;color:var(--rose-d);border-radius:999px;padding:6px 14px;font:inherit;font-size:12px;font-weight:700;cursor:pointer}
+.center{min-height:70vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div>
+      <div class="brand">ANGEL LIVE</div>
+      <div class="sub">CATALOGUE IMPORT ｜ 楽天ランキング一括取込</div>
+    </div>
+    <button class="mini" onclick="location.href='./'">マイページへ</button>
+  </div>
+
+  <div id="authGate" class="center" style="display:none">
+    <div class="card" style="width:100%;max-width:320px">
+      <div class="title">運営ログイン</div>
+      <label class="fl">メールアドレス<input id="lgEmail" type="email" autocapitalize="none"></label>
+      <label class="fl">パスワード<input id="lgPw" type="password"></label>
+      <button class="btn" id="lgBtn">ログイン</button>
+      <div class="hint">マイページで運営ログイン済みなら、このページを開き直すだけで自動で入れます</div>
+    </div>
+  </div>
+
+  <div id="app" style="display:none">
+    <div class="card">
+      <div class="title">1. 楽天API認証（新仕様）</div>
+      <label class="fl">アプリケーションID（UUID形式）<input id="rkId" placeholder="a7cb0f34-..."></label>
+      <label class="fl">アクセスキー<input id="rkKey" placeholder="pk_..."></label>
+      <div class="hint">この端末に保存されるので入力は初回だけ。<a href="https://webservice.rakuten.co.jp/app/list" target="_blank" rel="noopener">楽天デベロッパーズ</a>で確認可。通信はSupabase経由やからIP設定は不要になった。</div>
+      <button class="btn sub2" id="loadG">美容ジャンルを読み込む</button>
+    </div>
+
+    <div class="card" id="gCard" style="display:none">
+      <div class="title">2. ジャンル選択 → カタログのカテゴリに振り分け</div>
+      <div id="genres"></div>
+      <div class="grid2" style="margin-top:12px">
+        <div><label class="fl">各ジャンル何品？</label>
+          <select id="perG"><option value="30">30品</option><option value="60" selected>60品</option><option value="90">90品</option></select></div>
+        <div><label class="fl">除外ワード</label>
+          <input id="ng" value="中古,訳あり,福袋,お試し,サンプル,アウトレット,詰め替え用"></div>
+      </div>
+      <button class="btn" id="run">ランキングから一括取得</button>
+      <div id="prog"></div><div class="bar"><i id="barF"></i></div>
+    </div>
+
+    <div class="card" id="pCard" style="display:none">
+      <div class="title">3. プレビュー（名前タップで修正・✕で除外）</div>
+      <div id="sum"></div>
+      <div id="items"></div>
+    </div>
+
+    <div class="card" id="sCard" style="display:none">
+      <div class="title">4. カタログに登録</div>
+      <label class="chk"><input type="checkbox" id="skipDup" checked>すでにカタログにある同名商品はスキップする</label>
+      <label class="chk"><input type="checkbox" id="wipeSeed">取込前に、画像なしの初期ダミー商品を削除する</label>
+      <button class="btn" id="save">Supabaseカタログへ一括登録</button>
+      <div class="hint">登録するとライバー全員のカタログに画像付きで即反映される</div>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const $=id=>document.getElementById(id);
+const cfg=window.APP_CONFIG||{};
+const sb=window.supabase.createClient(cfg.SUPABASE_URL,cfg.SUPABASE_ANON_KEY);
+const MY_CATS=['スキンケア','ヘアケア','コスメ','美容家電','バス&ボディ','ネイル','フレグランス','リラックス&健康','ファッション小物','ギフト券&体験','対象外'];
+const BEAUTY_ROOT=100939;
+let rows=[];
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const toast=m=>{const t=$('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2600)};
+const big=u=>u?u.replace(/_ex=\d+x\d+/,'_ex=400x400'):'';
+
+// ---- 認証（マイページと同じセッションを共有） ----
+async function checkAuth(){
+  const {data:{session}}=await sb.auth.getSession();
+  if(!session){$('authGate').style.display='flex';$('app').style.display='none';return}
+  const {data:adm}=await sb.from('admins').select('user_id').eq('user_id',session.user.id).maybeSingle();
+  if(!adm){toast('運営アカウントでログインしてな');await sb.auth.signOut();$('authGate').style.display='flex';return}
+  $('authGate').style.display='none';$('app').style.display='block';
+  $('rkId').value=localStorage.getItem('rk_app_id')||'';
+  $('rkKey').value=localStorage.getItem('rk_access_key')||'';
+}
+$('lgBtn').onclick=async()=>{
+  const {error}=await sb.auth.signInWithPassword({email:$('lgEmail').value.trim(),password:$('lgPw').value});
+  if(error){toast('ログインに失敗: '+error.message);return}
+  checkAuth();
+};
+checkAuth();
+
+// ---- 楽天 新API ----
+function jsonp(url){return new Promise((res,rej)=>{
+  const cb='cb'+Math.random().toString(36).slice(2);
+  window[cb]=d=>{res(d);delete window[cb];s.remove()};
+  const s=document.createElement('script');
+  s.src=url+'&callback='+cb;s.onerror=()=>{rej(new Error('network'));delete window[cb];s.remove()};
+  document.body.appendChild(s);
+})}
+async function rkApi(path,params){
+  const id=$('rkId').value.trim(),key=$('rkKey').value.trim();
+  const {data:d,error:fe}=await sb.functions.invoke('rakuten-proxy',{
+    body:{path,params:{applicationId:id,accessKey:key,...params}}
+  });
+  if(fe)throw new Error('中継エラー: '+fe.message);
+  if(!d)throw new Error('中継から応答なし');
+  if(d.error)throw new Error(d.error_description||d.error);
+  if(d.errors)throw new Error(d.errors.errorMessage||JSON.stringify(d.errors));
+  return d;
+}
+async function rkTry(paths,params){let last;for(const p of paths){try{return await rkApi(p,params)}catch(e){last=e}}throw last}
+
+function cleanName(s){
+  return (s||'')
+    .replace(/【[^】]*】/g,' ').replace(/[［\[][^\]］]*[\]］]/g,' ')
+    .replace(/＼[^／]*／/g,' ').replace(/《[^》]*》/g,' ')
+    .replace(/★|☆|◆|◎|■|●|♪|※/g,' ')
+    .replace(/(送料無料|正規品|正規販売店|国内正規|公式|あす楽対応?|翌日配達|即納|ポイント\d*倍|クーポン\S*|最安値\S*|ランキング\s*\d+位\S*|楽天\d+位|レビュー特典\S*|プレゼントに?最適|ギフトに?|母の日|父の日|誕生日|お歳暮|お中元|SALE|セール)/gi,' ')
+    .replace(/\s+/g,' ').trim().slice(0,60);
+}
+function guessCat(g){
+  if(/香水|フレグランス/.test(g))return 'フレグランス';
+  if(/ネイル/.test(g))return 'ネイル';
+  if(/スキン|基礎/.test(g))return 'スキンケア';
+  if(/ヘア/.test(g))return 'ヘアケア';
+  if(/メイク|コスメ/.test(g))return 'コスメ';
+  if(/家電|ドライヤー|美顔/.test(g))return '美容家電';
+  if(/ボディ|バス|入浴|石鹸|アロマ|リラ/.test(g))return 'バス&ボディ';
+  return 'コスメ';
+}
+
+$('loadG').onclick=async()=>{
+  const id=$('rkId').value.trim(),key=$('rkKey').value.trim();
+  if(!id||!key){toast('IDとアクセスキー両方入れてな');return}
+  localStorage.setItem('rk_app_id',id);localStorage.setItem('rk_access_key',key);
+  $('loadG').disabled=true;
+  try{
+    const d=await rkTry(['IchibaGenre/Search/20170711','IchibaGenre/Search/20140222'],{genreId:BEAUTY_ROOT});
+    const children=(d.children||[]).map(c=>c.child||c);
+    $('genres').innerHTML=children.map((g,i)=>`
+      <div class="genre">
+        <input type="checkbox" id="g${i}" data-id="${g.genreId}" data-name="${g.genreName}" checked>
+        <div class="gn">${g.genreName}</div>
+        <select id="gc${i}">${MY_CATS.map(c=>`<option ${c===guessCat(g.genreName)?'selected':''}>${c}</option>`).join('')}</select>
+      </div>`).join('');
+    $('gCard').style.display='block';
+    toast('ジャンル読み込み完了。不要なやつはチェック外して');
+  }catch(e){toast('楽天APIエラー: '+e.message)}
+  $('loadG').disabled=false;
+};
+
+$('run').onclick=async()=>{
+  const checks=[...document.querySelectorAll('#genres input[type=checkbox]:checked')];
+  if(!checks.length){toast('ジャンル選んでな');return}
+  const pages=parseInt($('perG').value)/30;
+  const ng=$('ng').value.split(',').map(s=>s.trim()).filter(Boolean);
+  const seen=new Set();
+  rows=[];$('run').disabled=true;$('pCard').style.display='block';$('items').innerHTML='';
+  const total=checks.filter(c=>document.getElementById('gc'+c.id.slice(1)).value!=='対象外').length*pages;let done=0;
+  for(const ch of checks){
+    const cat=document.getElementById('gc'+ch.id.slice(1)).value;
+    if(cat==='対象外')continue;
+    for(let p=1;p<=pages;p++){
+      $('prog').textContent=`取得中：${ch.dataset.name}（${p}/${pages}）`;
+      try{
+        const d=await rkTry(['IchibaItem/Ranking/20220601','IchibaItemRanking/20220601'],{genreId:ch.dataset.id,page:p});
+        for(const it of (d.Items||[])){
+          const raw=it.itemName||'';
+          if(ng.some(w=>raw.includes(w)))continue;
+          const name=cleanName(raw);
+          const key=name.slice(0,26);
+          if(seen.has(key)||!name)continue;
+          seen.add(key);
+          rows.push({cat,name,price:it.itemPrice,pt:Math.round(it.itemPrice/10),img:big((it.mediumImageUrls||[])[0])});
+        }
+      }catch(e){toast(ch.dataset.name+': '+e.message)}
+      done++;$('barF').style.width=(done/total*100)+'%';render();
+      await sleep(1100);
+    }
+  }
+  $('prog').textContent=`完了：${rows.length}品`;
+  $('run').disabled=false;$('sCard').style.display='block';
+};
+
+function render(){
+  const by={};rows.forEach(r=>by[r.cat]=(by[r.cat]||0)+1);
+  $('sum').textContent='計 '+rows.length+'品 ｜ '+Object.entries(by).map(([k,v])=>`${k} ${v}`).join(' / ');
+  $('items').innerHTML=rows.map((r,i)=>`
+  <div class="row">
+    ${r.img?`<img src="${r.img}" loading="lazy">`:''}
+    <div class="info">
+      <input class="nm" value="${r.name.replace(/"/g,'&quot;')}" onchange="rows[${i}].name=this.value">
+      <div class="meta">参考価格 ¥${Number(r.price).toLocaleString()}</div>
+      <span class="cat">${r.cat}</span>
+    </div>
+    <div class="pt"><input value="${r.pt}" inputmode="numeric" onchange="rows[${i}].pt=parseInt(this.value)||0"><div class="ptl">pt</div></div>
+    <button class="del" onclick="rows.splice(${i},1);render()">✕</button>
+  </div>`).join('');
+}
+window.rows=rows;
+
+$('save').onclick=async()=>{
+  if(!rows.length){toast('登録する商品がないで');return}
+  $('save').disabled=true;
+  try{
+    if($('wipeSeed').checked){
+      if(confirm('画像が設定されていない既存商品を全部削除する。ええか？')){
+        const {error}=await sb.from('catalog').delete().or('img.is.null,img.eq.');
+        if(error)throw error;
+        toast('初期ダミーを削除した');
+      }
+    }
+    let list=rows;
+    if($('skipDup').checked){
+      const {data:ex}=await sb.from('catalog').select('name');
+      const names=new Set((ex||[]).map(r=>r.name));
+      list=rows.filter(r=>!names.has(r.name));
+    }
+    if(!list.length){toast('全部登録済みやった（スキップされた）');$('save').disabled=false;return}
+    for(let i=0;i<list.length;i+=100){
+      const chunk=list.slice(i,i+100).map(r=>({cat:r.cat,name:r.name,price:r.price,pt:r.pt,img:r.img}));
+      const {error}=await sb.from('catalog').insert(chunk);
+      if(error)throw error;
+    }
+    toast(list.length+'品をカタログに登録した！マイページで確認してみ');
+  }catch(e){toast('登録エラー: '+(e.message||e))}
+  $('save').disabled=false;
+};
+</script>
+</body>
+</html>
