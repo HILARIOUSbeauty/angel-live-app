@@ -187,7 +187,15 @@ $('loadG').onclick=async()=>{
   $('loadG').disabled=true;
   try{
     const d=await rkTry(['IchibaGenre/Search/20170711','IchibaGenre/Search/20140222'],{genreId:BEAUTY_ROOT});
-    const children=(d.children||[]).map(c=>c.child||c);
+    // いろんな形のレスポンスに対応してジャンル配列を探す
+    let kids=d.children||d.Children||(d.body&&d.body.children)||(d.Body&&d.Body.children)||[];
+    if(!Array.isArray(kids))kids=[];
+    let children=kids.map(c=>c.child||c.Child||c).filter(g=>g&&(g.genreId||g.genreID)&&(g.genreName||g.genrename));
+    children=children.map(g=>({genreId:g.genreId||g.genreID,genreName:g.genreName||g.genrename}));
+    if(!children.length){
+      alert('デバッグ情報（この画面をスクショしてClaudeに送って）:\n\n'+JSON.stringify(d).slice(0,900));
+      $('loadG').disabled=false;return;
+    }
     $('genres').innerHTML=children.map((g,i)=>`
       <div class="genre">
         <input type="checkbox" id="g${i}" data-id="${g.genreId}" data-name="${g.genreName}" checked>
