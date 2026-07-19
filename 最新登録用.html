@@ -190,8 +190,8 @@ $('loadG').onclick=async()=>{
     // いろんな形のレスポンスに対応してジャンル配列を探す
     let kids=d.children||d.Children||(d.body&&d.body.children)||(d.Body&&d.Body.children)||[];
     if(!Array.isArray(kids))kids=[];
-    let children=kids.map(c=>c.child||c.Child||c).filter(g=>g&&(g.genreId||g.genreID)&&(g.genreName||g.genrename));
-    children=children.map(g=>({genreId:g.genreId||g.genreID,genreName:g.genreName||g.genrename}));
+    let children=kids.map(c=>c.child||c.Child||c).filter(g=>g&&(g.genreId||g.genreID)&&(g.genreName||g.nameJa||g.name));
+    children=children.map(g=>({genreId:g.genreId||g.genreID,genreName:g.genreName||g.nameJa||g.name}));
     if(!children.length){
       alert('デバッグ情報（この画面をスクショしてClaudeに送って）:\n\n'+JSON.stringify(d).slice(0,900));
       $('loadG').disabled=false;return;
